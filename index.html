@@ -131,59 +131,111 @@ header{position:sticky;top:0;z-index:100;height:64px;padding:0 32px;display:flex
       <input type="text" id="search-inp" placeholder="Search channels…" oninput="filterChannels()">
     </div>
   </div>
+
   <div class="cat-row" id="cat-tabs">
     <button class="cat-btn active" data-cat="All" onclick="selectCat(this)">All</button>
   </div>
+
   <div class="ch-count-row" id="ch-count-label">Loading…</div>
-  <div class="ch-grid" id="ch-grid">
-    <!-- skeletons -->
-    ${Array(16).fill('<div class="skel-card"><div class="skel skel-card-top"></div><div class="skel-card-body"><div class="skel skel-line w80"></div><div class="skel skel-line w50"></div></div></div>').join('')}
-  </div>
+
+  <div class="ch-grid" id="ch-grid"></div>
 </div>
 
 <div id="toasts"></div>
 
 <script>
-const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiojson/main/stream.json';
+const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiooutputwithplayer/main/output.json';
 let allChannels = [], filtered = [], currentCat = 'All';
 
-const catEmoji = {'Cricket':'🏏','Sports':'⚽','Business News':'📈','Entertainment':'🎬','News':'📰','Infotainment':'🔬','Movies':'🎥','Kids':'🧸','Music':'🎵','Devotional':'🙏','Regional':'🗺️','Lifestyle':'✨'};
+const catEmoji = {
+  'Cricket':'🏏',
+  'Sports':'⚽',
+  'Business News':'📈',
+  'Entertainment':'🎬',
+  'News':'📰',
+  'Infotainment':'🔬',
+  'Movies':'🎥',
+  'Kids':'🧸',
+  'Music':'🎵',
+  'Devotional':'🙏',
+  'Regional':'🗺️',
+  'Lifestyle':'✨'
+};
+
 const getCE = c => catEmoji[c] || '📺';
 
-// Inject skeletons inline (template literal above won't work — use JS)
-document.getElementById('ch-grid').innerHTML = Array(16).fill(0).map(() =>
-  `<div class="skel-card"><div class="skel skel-card-top"></div><div class="skel-card-body"><div class="skel skel-line w80"></div><div class="skel skel-line w50"></div></div></div>`
-).join('');
+function showSkeletons() {
+  document.getElementById('ch-grid').innerHTML = Array(16).fill(0).map(() =>
+    `<div class="skel-card">
+      <div class="skel skel-card-top"></div>
+      <div class="skel-card-body">
+        <div class="skel skel-line w80"></div>
+        <div class="skel skel-line w50"></div>
+      </div>
+    </div>`
+  ).join('');
+}
 
 async function loadChannels() {
+  showSkeletons();
+
   try {
     const res = await fetch(JSON_URL);
     if (!res.ok) throw new Error('HTTP ' + res.status);
+
     const data = await res.json();
-    allChannels = Object.entries(data).map(([key, ch]) => ({ key, ...ch }));
+
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid JSON format: expected array');
+    }
+
+    allChannels = data.map(ch => ({
+      id: ch.id || '',
+      name: ch.name || 'Unknown Channel',
+      logo: ch.logo || '',
+      group: ch.group || 'General',
+      link: ch.link || '#'
+    }));
+
     buildCats();
     filterChannels();
+
     document.getElementById('ch-count-pill').textContent = allChannels.length + ' CHANNELS';
     hideLoading();
     toast('✦ ' + allChannels.length + ' channels loaded', 'ok');
-  } catch(e) {
-    document.getElementById('ch-grid').innerHTML = `<div class="err-state"><p>Failed to load channels</p><button onclick="loadChannels()">↺ Retry</button></div>`;
+  } catch (e) {
+    document.getElementById('ch-grid').innerHTML = `
+      <div class="err-state">
+        <p>Failed to load channels</p>
+        <button onclick="loadChannels()">↺ Retry</button>
+      </div>
+    `;
+    document.getElementById('ch-count-label').textContent = '0 CHANNELS';
+    document.getElementById('ch-count-pill').textContent = '0 CHANNELS';
     hideLoading();
     toast('Failed to load channels', 'err');
+    console.error(e);
   }
 }
 
 function hideLoading() {
   const el = document.getElementById('loading-screen');
+  if (!el) return;
   el.style.transition = 'opacity 0.5s';
   el.style.opacity = '0';
-  setTimeout(() => el.remove(), 500);
+  setTimeout(() => {
+    if (el.parentNode) el.remove();
+  }, 500);
 }
 
 function buildCats() {
-  const cats = ['All', ...new Set(allChannels.map(c => c.group_title).filter(Boolean))].sort((a,b) => a==='All'?-1:b==='All'?1:a.localeCompare(b));
+  const cats = ['All', ...new Set(allChannels.map(c => c.group).filter(Boolean))]
+    .sort((a, b) => a === 'All' ? -1 : b === 'All' ? 1 : a.localeCompare(b));
+
   document.getElementById('cat-tabs').innerHTML = cats.map(c =>
-    `<button class="cat-btn${c==='All'?' active':''}" data-cat="${c}" onclick="selectCat(this)">${getCE(c)} ${c}</button>`
+    `<button class="cat-btn${c === 'All' ? ' active' : ''}" data-cat="${escapeHtml(c)}" onclick="selectCat(this)">
+      ${getCE(c)} ${escapeHtml(c)}
+    </button>`
   ).join('');
 }
 
@@ -195,45 +247,70 @@ function selectCat(btn) {
 }
 
 function filterChannels() {
-  const q = document.getElementById('search-inp').value.toLowerCase();
+  const q = document.getElementById('search-inp').value.toLowerCase().trim();
+
   filtered = allChannels.filter(ch =>
-    (currentCat === 'All' || ch.group_title === currentCat) &&
-    (!q || (ch.channel_name||'').toLowerCase().includes(q) || (ch.group_title||'').toLowerCase().includes(q))
+    (currentCat === 'All' || ch.group === currentCat) &&
+    (
+      !q ||
+      ch.name.toLowerCase().includes(q) ||
+      ch.group.toLowerCase().includes(q) ||
+      ch.id.toLowerCase().includes(q)
+    )
   );
+
   document.getElementById('ch-count-label').textContent = filtered.length + ' CHANNELS';
   renderGrid();
 }
 
 function renderGrid() {
   const grid = document.getElementById('ch-grid');
+
   if (!filtered.length) {
     grid.innerHTML = '<div class="err-state"><p>No channels found</p></div>';
     return;
   }
+
   grid.innerHTML = filtered.map(ch => `
-    <a class="ch-card" href="player.html?id=${encodeURIComponent(ch.key)}">
+    <a class="ch-card" href="${escapeAttr(ch.link)}" target="_blank" rel="noopener noreferrer">
       <div class="ch-card-top">
-        ${ch.tvg_logo
-          ? `<img src="${ch.tvg_logo}" alt="${ch.channel_name||''}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="ch-ph-big" style="display:none">${getCE(ch.group_title)}</span>`
-          : `<span class="ch-ph-big">${getCE(ch.group_title)}</span>`}
-        <span class="ch-live-tag">● LIVE</span>
-        <span class="ch-num-tag">${ch.key}</span>
+        ${ch.logo
+          ? `<img src="${escapeAttr(ch.logo)}" alt="${escapeAttr(ch.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="ch-ph-big" style="display:none">${getCE(ch.group)}</span>`
+          : `<span class="ch-ph-big">${getCE(ch.group)}</span>`
+                  <span class="ch-live-tag">● LIVE</span>
+        <span class="ch-num-tag">${escapeHtml(ch.id)}</span>
       </div>
       <div class="ch-card-body">
-        <div class="ch-card-name">${ch.channel_name || 'Channel '+ch.key}</div>
-        <div class="ch-card-cat">${ch.group_title || 'General'}</div>
+        <div class="ch-card-name">${escapeHtml(ch.name)}</div>
+        <div class="ch-card-cat">${escapeHtml(ch.group)}</div>
       </div>
     </a>
   `).join('');
 }
 
-function toast(msg, type='info') {
+function toast(msg, type = 'info') {
   const c = document.getElementById('toasts');
   const t = document.createElement('div');
-  t.className = `toast${type==='ok'?' t-ok':type==='err'?' t-err':''}`;
+  t.className = `toast${type === 'ok' ? ' t-ok' : type === 'err' ? ' t-err' : ''}`;
   t.textContent = msg;
   c.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
+  setTimeout(() => {
+    if (t.parentNode) t.remove();
+  }, 3000);
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[m]));
+}
+
+function escapeAttr(str) {
+  return String(str).replace(/"/g, '&quot;');
 }
 
 loadChannels();
