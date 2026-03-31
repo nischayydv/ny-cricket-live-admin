@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NY Cricket Live — Channel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#000; --surface:#0a0a0a; --border:#1a1a1a; --border2:#222;
+      --accent:#e8c547; --green:#22c55e; --red:#ef4444; --text:#f0f0f0;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:'Outfit',sans-serif;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    header{
+      position:sticky;
+      top:0;
+      z-index:100;
+      height:64px;
+      padding:0 32px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:rgba(0,0,0,0.97);
+      border-bottom:1px solid var(--border);
+      backdrop-filter:blur(16px);
+    }
+    .logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
+    .logo-img{
+      height:46px;width:auto;object-fit:contain;
+      filter:drop-shadow(0 0 12px rgba(232,197,71,0.45));
+      transition:filter .3s;
+    }
+    .logo-img:hover{filter:drop-shadow(0 0 22px rgba(232,197,71,0.75));}
+    .logo-words{display:flex;flex-direction:column;line-height:1.1;}
+    .logo-top{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:var(--accent);}
+    .logo-bot{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:5px;color:#444;}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;
+      font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+    }
+    .pill-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.28);color:#ff6b6b;}
+    .live-dot{
+      width:6px;height:6px;border-radius:50%;background:#ef4444;
+      box-shadow:0 0 6px #ef4444;animation:blink 1.3s ease-in-out infinite;
+    }
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+    .main-wrap{
+      max-width:1000px;
+      margin:0 auto;
+      padding:28px 20px;
+    }
+
+    .card{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 10px 40px rgba(0,0,0,0.45);
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:320px 1fr;
+      min-height:280px;
+    }
+
+    .left{
+      background:#050505;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      border-right:1px solid var(--border);
+      overflow:hidden;
+    }
+    .left img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      padding:20px;
+    }
+    .ph{font-size:64px;}
+
+    .badge-live{
+      position:absolute;
+      top:12px;
+      left:12px;
+      font-size:10px;
+      font-weight:700;
+      letter-spacing:1px;
+      color:#ff6b6b;
+      background:rgba(0,0,0,0.85);
+      border:1px solid rgba(239,68,68,0.3);
+      padding:4px 8px;
+      border-radius:6px;
+    }
+    .badge-id{
+      position:absolute;
+      top:12px;
+      right:12px;
+      font-family:'Bebas Neue',sans-serif;
+      font-size:14px;
+      color:#333;
+      background:rgba(0,0,0,0.75);
+      padding:2px 8px;
+      border-radius:6px;
+    }
+
+    .right{padding:24px;}
+    .group{
+      font-size:11px;
+      color:var(--accent);
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      margin-bottom:8px;
+      font-weight:700;
+    }
+    .title{
+      font-size:28px;
+      font-weight:700;
+      line-height:1.2;
+      margin-bottom:12px;
+    }
+    .desc{
+      color:#777;
+      font-size:14px;
+      line-height:1.6;
+      margin-bottom:20px;
+    }
+    .info{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:22px;
+    }
+    .info-chip{
+      border:1px solid var(--border2);
+      background:#0d0d0d;
+      color:#aaa;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:12px;
+    }
+
+    .btn-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .btn{
+      appearance:none;
+      border:none;
+      outline:none;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:44px;
+      padding:0 16px;
+      border-radius:10px;
+      font-family:'Outfit',sans-serif;
+      font-size:13px;
+      font-weight:600;
+      transition:.2s ease;
+    }
+    .btn-primary{
+      background:rgba(232,197,71,0.12);
+      border:1px solid rgba(232,197,71,0.35);
+      color:var(--accent);
+    }
+    .btn-primary:hover{background:rgba(232,197,71,0.18);}
+    .btn-secondary{
+      background:#111;
+      border:1px solid #222;
+      color:#ddd;
+    }
+    .btn-secondary:hover{background:#161616;}
+
+    .redirect-box{
+      margin-top:18px;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid var(--border2);
+      background:#0b0b0b;
+    }
+    .redirect-label{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:1.2px;
+      color:#555;
+      margin-bottom:8px;
+    }
+    .redirect-url{
+      word-break:break-all;
+      font-size:12px;
+      line-height:1.5;
+      color:#999;
+    }
+
+    .status{
+      margin-top:18px;
+      color:#666;
+      font-size:13px;
+    }
+
+    .err{
+      text-align:center;
+      padding:80px 20px;
+      color:#777;
+    }
+    .err h2{
+      color:#f0f0f0;
+      margin-bottom:8px;
+    }
+    .err p{
+      margin-bottom:16px;
+    }
+
+    #loading-screen{
+      position:fixed;
+      inset:0;
+      background:#000;
+      z-index:9999;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:20px;
+    }
+    .load-logo{
+      height:70px;
+      filter:drop-shadow(0 0 22px rgba(232,197,71,0.5));
+      animation:glow 2s ease-in-out infinite;
+    }
+    @keyframes glow{
+      0%,100%{filter:drop-shadow(0 0 14px rgba(232,197,71,0.4));}
+      50%{filter:drop-shadow(0 0 34px rgba(232,197,71,0.8));}
+    }
+    .load-text{
+      font-family:'Bebas Neue',sans-serif;
+      font-size:26px;
+      letter-spacing:5px;
+      color:var(--accent);
+    }
+    .load-bar{
+      width:200px;
+      height:2px;
+      background:#111;
+      border-radius:2px;
+      overflow:hidden;
+    }
+    .load-fill{
+      height:100%;
+      background:var(--accent);
+      border-radius:2px;
+      animation:loadFill 1.8s ease-in-out infinite;
+    }
+    @keyframes loadFill{
+      0%{width:0;}
+      70%{width:90%;}
+      100%{width:100%;}
+    }
+    .load-sub{
+      font-size:12px;
+      color:#333;
+      letter-spacing:1px;
+    }
+
+    #toasts{
+      position:fixed;
+      bottom:22px;
+      right:22px;
+      z-index:9000;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      pointer-events:none;
+    }
+    .toast{
+      background:#161616;
+      border-radius:8px;
+      padding:10px 15px;
+      font-size:13px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      animation:toastIn .25s ease;
+      box-shadow:0 8px 32px rgba(0,0,0,0.8);
+      border-left:3px solid var(--accent);
+      max-width:300px;
+    }
+    .toast.t-ok{border-left-color:var(--green);}
+    .toast.t-err{border-left-color:var(--red);}
+    @keyframes toastIn{
+      from{opacity:0;transform:translateX(22px);}
+      to{opacity:1;transform:translateX(0);}
+    }
+
+    @media(max-width:700px){
+      header{padding:0 16px;}
+      .logo-words{display:none;}
+      .hero{grid-template-columns:1fr;}
+      .left{border-right:none;border-bottom:1px solid var(--border);}
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <img class="load-logo" src="https://i.postimg.cc/J4m9Dz70/Gemini-Generated-Image-4zvnud4zvnud4zvn-Picsart-Background-Remover.png" alt="NY Cricket Live">
+    <div class="load-text">NY CRICKET LIVE</div>
+    <div class="load-bar"><div class="load-fill"></div></div>
+    <div class="load-sub">Loading channel…</div>
+  </div>
+
+  <header>
+    <a class="logo" href="index.html">
+      <img src="https://i.postimg.cc/J4m9Dz70/Gemini-Generated-Image-4zvnud4zvnud4zvn-Picsart-Background-Remover.png" alt="NY Cricket Live" class="logo-img">
+      <div class="logo-words">
+        <div class="logo-top">NY CRICKET</div>
+        <div class="logo-bot">LIVE STREAMING</div>
+      </div>
+    </a>
+    <div class="pill pill-red"><div class="live-dot"></div>LIVE</div>
+  </header>
+
+  <div class="main-wrap" id="app"></div>
+  <div id="toasts"></div>
+
+  <script>
+    const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiooutputwithplayer/main/output.json';
+
+    const catEmoji = {
+      'Cricket':'🏏',
+      'Sports':'⚽',
+      'Business News':'📈',
+      'Entertainment':'🎬',
+      'News':'📰',
+      'Infotainment':'🔬',
+      'Movies':'🎥',
+      'Kids':'🧸',
+      'Music':'🎵',
+      'Devotional':'🙏',
+      'Regional':'🗺️',
+      'Lifestyle':'✨'
+    };
+
+    function getCE(c) {
+      return catEmoji[c] || '📺';
+    }
+
+    function getIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    function hideLoading() {
+      const el = document.getElementById('loading-screen');
+      if (!el) return;
+      el.style.transition = 'opacity 0.5s ease';
+      el.style.opacity = '0';
+      setTimeout(() => {
+        if (el.parentNode) el.remove();
+      }, 500);
+    }
+
+    function toast(msg, type = 'info') {
+      const c = document.getElementById('toasts');
+      const t = document.createElement('div');
+      t.className = `toast${type === 'ok' ? ' t-ok' : type === 'err' ? ' t-err' : ''}`;
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => {
+        if (t.parentNode) t.remove();
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#39;'
+      }[m]));
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast('Redirect URL copied', 'ok');
+      } catch (e) {
+        toast('Copy failed', 'err');
+      }
+    }
+
+    function renderError(message) {
+      document.getElementById('app').innerHTML = `
+        <div class="card">
+          <div class="err">
+            <h2>Channel not found</h2>
+            <p>${escapeHtml(message)}</p>
+            <a href="index.html" class="btn btn-primary">← Back to channels</a>
+          </div>
+        </div>
+      `;
+      hideLoading();
+    }
+
+    function startRedirect(url, seconds = 3) {
+      const status = document.getElementById('redirect-status');
+      if (!status) return;
+
+      let remaining = seconds;
+      status.textContent = `Redirecting in ${remaining}s…`;
+
+      const timer = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(timer);
+          window.location.href = url;
+          return;
+        }
+        status.textContent = `Redirecting in ${remaining}s…`;
+      }, 1000);
+    }
+
+    async function loadChannel() {
+      const id = getIdFromUrl();
+
+      if (!id) {
+        renderError('Missing channel id in URL.');
+        return;
+      }
+
+      try {
+        const res = await fetch(JSON_URL, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error('Invalid JSON format');
+
+        const ch = data.find(item => String(item.id) === String(id));
+
+        if (!ch) {
+          renderError('No channel found for ID ' + id);
+          return;
+        }
+
+        const name = String(ch.name || 'Unknown Channel');
+        const group = String(ch.group || 'General');
+        const logo = String(ch.logo || '');
+        const link = String(ch.link || '#');
+        const channelId = String(ch.id || id);
+
+        document.title = `${name} — NY Cricket Live`;
+
+        document.getElementById('app').innerHTML = `
+          <div class="card">
+            <div class="hero">
+              <div class="left">
+                ${
+                  logo
+                    ? `<img src="${logo}" alt="${escapeHtml(name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="ph" style="display:none">${getCE(group)}</div>`
+                    : `<div class="ph">${getCE(group)}</div>`
+                }
+                <div class="badge-live">● LIVE</div>
+                <div class="badge-id">${escapeHtml(channelId)}</div>
+              </div>
+
+              <div class="right">
+                <div class="group">${escapeHtml(group)}</div>
+                <div class="title">${escapeHtml(name)}</div>
+                <div class="desc">
+                  This channel page always fetches the latest stream URL from the JSON source.
+                  You can open the latest stream manually, copy its redirect URL, or wait for auto redirect.
+                </div>
+
+                <div class="info">
+                  <div class="info-chip">Channel ID: ${escapeHtml(channelId)}</div>
+                  <div class="info-chip">Category: ${escapeHtml(group)}</div>
+                  <div class="info-chip">Source: Live JSON</div>
+                </div>
+
+                <div class="btn-row">
+                  <a class="btn btn-primary" href="${link}" target="_blank" rel="noopener noreferrer">▶ Open Stream</a>
+                  <button class="btn btn-secondary" id="copy-btn" type="button">⧉ Copy Redirect URL</button>
+                  <a class="btn btn-secondary" href="index.html">← Back</a>
+                </div>
+
+                <div class="redirect-box">
+                  <div class="redirect-label">Latest Redirect URL</div>
+                  <div class="redirect-url" id="redirect-url">${escapeHtml(link)}</div>
+                </div>
+
+                <div class="status" id="redirect-status">Preparing redirect…</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('copy-btn').addEventListener('click', () => copyText(link));
+
+        hideLoading();
+        toast('Latest URL loaded', 'ok');
+        startRedirect(link, 3);
+      } catch (err) {
+        console.error(err);
+        renderError('Failed to load channel data.');
+        toast('Failed to load channel', 'err');
+      }
+    }
+
+    loadChannel();
+  </script>
+</body>
+</html>
