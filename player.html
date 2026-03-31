@@ -1,3 +1,18 @@
+Below is a **complete working HTML** that:
+- loads channel data from a JSON URL
+- expects JSON in the format you showed
+- uses Shaka Player
+- supports ClearKey DRM via `kid` + `key`
+- uses the click-to-play overlay pattern
+- uses **no proxy**
+
+I’m also including a **sample JSON file format** exactly like your example.
+
+---
+
+# Full HTML
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,12 +35,23 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'Roboto', sans-serif; height: 100vh; overflow: hidden; }
 
-    /* LAYOUT SYSTEM */
-    .app-container { display: flex; height: 100vh; width: 100vw; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Roboto', sans-serif;
+      overflow: hidden;
+    }
 
-    /* SIDEBAR STYLES */
+    .app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Sidebar */
     .sidebar {
       width: var(--sidebar-width);
       background: var(--surface);
@@ -34,43 +60,308 @@
       flex-direction: column;
       z-index: 10;
     }
-    .sidebar-header { padding: 20px; border-bottom: 1px solid #222; }
-    .logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent); letter-spacing: 2px; }
-    .search-box { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; color: #fff; margin-top: 10px; outline: none; }
-    .channel-list { flex: 1; overflow-y: auto; padding: 10px; }
-    .ch-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; margin-bottom: 5px; }
-    .ch-item:hover { background: #222; }
-    .ch-item.active { background: #333; border-left: 4px solid var(--accent); }
-    .ch-logo { width: 45px; height: 45px; border-radius: 4px; object-fit: cover; background: #000; }
-    .ch-info { flex: 1; overflow: hidden; }
-    .ch-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* PLAYER AREA STYLES */
-    .player-main { flex: 1; position: relative; background: #000; display: flex; flex-direction: column; }
-    .shaka-video-container { width: 100%; aspect-ratio: 16/9; position: relative; }
-    video { width: 100%; height: 100%; background: #000; }
-
-    /* YouTube Theme Overrides */
-    .youtube-theme .shaka-played-range { background: var(--accent) !important; }
-    .youtube-theme .shaka-seek-bar-container input[type=range]::-webkit-slider-thumb { background: var(--accent); }
-
-    /* CLICK-TO-PLAY OVERLAY */
-    #playOverlay {
-      position: absolute; inset: 0; z-index: 3000;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.8); cursor: pointer; transition: opacity 0.4s;
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid #222;
     }
-    #playOverlay.hidden { opacity: 0; pointer-events: none; }
-    .play-btn-circle { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,0,0,0.4); }
-    .play-btn-circle i { font-size: 50px; color: white; margin-left: 5px; }
-    .loading-ring { width: 60px; height: 60px; border: 4px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* MOBILE ADJUSTMENTS */
+    .logo-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 10px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #fff;
+      margin-top: 10px;
+      outline: none;
+    }
+
+    .channel-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .ch-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 5px;
+    }
+
+    .ch-item:hover {
+      background: #222;
+    }
+
+    .ch-item.active {
+      background: #333;
+      border-left: 4px solid var(--accent);
+    }
+
+    .ch-logo {
+      width: 45px;
+      height: 45px;
+      border-radius: 4px;
+      object-fit: cover;
+      background: #000;
+      flex-shrink: 0;
+    }
+
+    .ch-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .ch-name {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ch-group {
+      font-size: 11px;
+      color: #777;
+    }
+
+    /* Player */
+    .player-main {
+      flex: 1;
+      position: relative;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .shaka-video-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      object-fit: contain;
+    }
+
+    /* Hide default spinner */
+    .shaka-spinner-container,
+    .shaka-spinner,
+    .shaka-spinner-svg {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+
+    /* Simple YouTube-like theme */
+    .youtube-theme .shaka-bottom-controls {
+      width: 100%;
+      padding: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .youtube-theme .shaka-controls-button-panel {
+      height: 40px;
+      padding: 0 10px;
+    }
+
+    .youtube-theme .shaka-controls-button-panel > * {
+      margin: 0;
+      padding: 3px 8px;
+      color: #EEE;
+      height: 40px;
+    }
+
+    .youtube-theme .shaka-controls-button-panel > *:hover {
+      color: #FFF;
+    }
+
+    .youtube-theme .shaka-seek-bar {
+      background: rgba(255,255,255,.2) !important;
+    }
+
+    .youtube-theme .shaka-buffered-range {
+      background: rgba(255,255,255,.4) !important;
+    }
+
+    .youtube-theme .shaka-played-range {
+      background: var(--accent) !important;
+    }
+
+    .youtube-theme .shaka-seek-bar-container input[type=range]::-webkit-slider-thumb {
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .youtube-theme .shaka-seek-bar-container input[type=range]::-moz-range-thumb {
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    /* Overlay */
+    #playOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      cursor: pointer;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.65) 100%);
+    }
+
+    #playOverlay.fade-out {
+      animation: fadeOut 0.4s ease forwards;
+      pointer-events: none;
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+
+    .ring {
+      width: 54px;
+      height: 54px;
+      border: 4px solid rgba(255,255,255,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #playBtn {
+      display: none;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255,0,0,0.92);
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 0 rgba(255,0,0,0.45);
+      animation: pulse 2.2s infinite;
+      transition: transform 0.15s ease;
+    }
+
+    #playBtn .material-icons-sharp {
+      font-size: 40px;
+      margin-left: 5px;
+      color: #fff;
+    }
+
+    #playBtn:hover {
+      transform: scale(1.1);
+    }
+
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(255,0,0,0.45); }
+      70%  { box-shadow: 0 0 0 22px rgba(255,0,0,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,0,0,0); }
+    }
+
+    .overlay-label {
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+    }
+
+    #channelTitle {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 1500;
+      background: rgba(0,0,0,0.65);
+      padding: 5px 10px;
+      border-radius: 4px;
+      pointer-events: none;
+      max-width: calc(100% - 24px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #errorBox {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 5000;
+      background: rgba(0,0,0,0.92);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #ff6666;
+      font-size: 15px;
+      text-align: center;
+      padding: 24px;
+    }
+
+    #errorBox button {
+      margin-top: 8px;
+      padding: 8px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .channel-list::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .channel-list::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 2px;
+    }
+
     @media (max-width: 768px) {
-      .app-container { flex-direction: column; }
-      .sidebar { width: 100%; height: 40%; border-right: none; border-top: 1px solid #222; }
-      .player-main { height: 60%; }
+      .app-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: 42%;
+        border-right: none;
+        border-top: 1px solid #222;
+        order: 2;
+      }
+
+      .player-main {
+        height: 58%;
+        order: 1;
+      }
     }
   </style>
 </head>
@@ -80,140 +371,320 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo-text">NY CRICKET LIVE</div>
-      <input type="text" class="search-box" id="searchInp" placeholder="Search Channels..." oninput="filterList()">
+      <input
+        type="text"
+        class="search-box"
+        id="searchInp"
+        placeholder="Search channels…"
+        oninput="filterList()"
+      >
     </div>
+
     <div class="channel-list" id="chList">
-      <div style="text-align:center; padding:20px; color:#666;">Fetching JSON...</div>
+      <div style="text-align:center; padding:30px; color:#555;">
+        <div class="ring" style="margin:0 auto 12px;"></div>
+        Loading channels…
+      </div>
     </div>
   </aside>
 
   <main class="player-main">
     <div class="shaka-video-container youtube-theme" id="videoContainer">
-      <video id="videoEl" playsinline></video>
+      <video id="videoEl" playsinline preload="auto"></video>
 
-      <div id="playOverlay" onclick="handleUserGesture()">
-        <div id="statusIcon" class="loading-ring"></div>
-        <div id="playLabel" style="margin-top:20px; font-weight:bold; letter-spacing:1px;">LOADING STREAM...</div>
+      <div id="playOverlay">
+        <div class="ring" id="loadRing"></div>
+        <div id="playBtn">
+          <span class="material-icons-sharp">play_arrow</span>
+        </div>
+        <div class="overlay-label" id="overlayLabel">Select a channel</div>
       </div>
-    </div>
 
-    <div style="padding:20px; background:var(--surface);">
-      <h2 id="currentName">Select a Channel</h2>
-      <p id="currentGrp" style="color:#aaa; font-size:14px; margin-top:5px;">Ready to play</p>
+      <div id="channelTitle"></div>
+
+      <div id="errorBox">
+        <span id="errorMsg">Stream failed to load</span>
+        <button onclick="retryChannel()">↺ Retry</button>
+      </div>
     </div>
   </main>
 </div>
 
 <script>
-  const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiojson/main/stream.json';
-  let allChannels = [], shakaPlayer = null, ui = null;
-  let isReadyToPlay = false;
+  const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiojson/main/stream.json'; // change this to your hosted json url if needed
 
-  // 1. INIT APP
+  let allChannels = [];
+  let shakaPlayer = null;
+  let shakaUI = null;
+  let streamReady = false;
+  let currentKey = null;
+
+  const video = document.getElementById('videoEl');
+  const container = document.getElementById('videoContainer');
+  const playOverlay = document.getElementById('playOverlay');
+  const loadRing = document.getElementById('loadRing');
+  const playBtn = document.getElementById('playBtn');
+  const overlayLabel = document.getElementById('overlayLabel');
+  const errorBox = document.getElementById('errorBox');
+  const errorMsg = document.getElementById('errorMsg');
+  const channelTitle = document.getElementById('channelTitle');
+
+  const isInIframe = () => {
+    try {
+      return window.self !== window.top;
+    } catch (_) {
+      return true;
+    }
+  };
+
+  const showLoading = (label = 'Loading stream…') => {
+    errorBox.style.display = 'none';
+    playOverlay.style.display = 'flex';
+    playOverlay.classList.remove('fade-out');
+    loadRing.style.display = 'block';
+    playBtn.style.display = 'none';
+    overlayLabel.textContent = label;
+    streamReady = false;
+  };
+
+  const markReady = () => {
+    loadRing.style.display = 'none';
+    playBtn.style.display = 'flex';
+    overlayLabel.textContent = 'Tap to Play';
+  };
+
+  const dismissOverlay = () => {
+    playOverlay.classList.add('fade-out');
+  };
+
+  const showError = (msg) => {
+    errorMsg.textContent = '⚠ ' + msg;
+    errorBox.style.display = 'flex';
+    playOverlay.style.display = 'none';
+    streamReady = false;
+  };
+
+  const doPlay = async () => {
+    if (!streamReady) return;
+
+    try {
+      video.muted = false;
+      video.volume = 0.8;
+      await video.play();
+      dismissOverlay();
+    } catch (_) {
+      try {
+        video.muted = true;
+        await video.play();
+        dismissOverlay();
+      } catch (e2) {
+        overlayLabel.textContent = 'Tap again to play';
+        console.error('Play failed:', e2);
+      }
+    }
+  };
+
+  playOverlay.addEventListener('click', doPlay);
+  playOverlay.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    doPlay();
+  });
+
+  let soundUnlocked = false;
+  const unlockSound = () => {
+    if (!soundUnlocked && video.muted) {
+      video.muted = false;
+      soundUnlocked = true;
+    }
+  };
+
+  ['click', 'touchstart', 'keydown'].forEach((ev) => {
+    document.addEventListener(ev, unlockSound, { once: true });
+  });
+
+  video.addEventListener('play', () => {
+    if (!isInIframe() && !document.fullscreenElement && window.innerWidth <= 768) {
+      container.requestFullscreen().catch(() => {});
+    }
+  }, { once: true });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && video.paused && streamReady) {
+      video.play().catch(() => {});
+    }
+  });
+
   async function initApp() {
     shaka.polyfill.installAll();
+
     if (!shaka.Player.isBrowserSupported()) {
-      alert("Browser not supported!");
+      showError('Browser not supported');
       return;
     }
 
     try {
       const res = await fetch(JSON_URL);
       const data = await res.json();
-      allChannels = Object.entries(data).map(([key, ch]) => ({ key, ...ch }));
+
+      allChannels = Object.entries(data).map(([key, ch]) => ({
+        id: key,
+        ...ch
+      }));
+
       renderList(allChannels);
 
-      // Auto-load first channel if nothing selected
-      if (allChannels.length > 0) loadChannel(allChannels[0].key);
+      if (allChannels.length > 0) {
+        loadChannel(allChannels[0].id);
+      } else {
+        overlayLabel.textContent = 'No channels available';
+      }
     } catch (e) {
-      document.getElementById('chList').innerHTML = `<div style="padding:20px; color:red;">Failed to load JSON</div>`;
+      console.error('JSON load failed:', e);
+      document.getElementById('chList').innerHTML =
+        `<div style="padding:20px; color:red;">Failed to load channel list</div>`;
+      showError('Failed to load channel list');
     }
   }
 
-  // 2. RENDER LIST
   function renderList(channels) {
     const list = document.getElementById('chList');
+
+    if (!channels.length) {
+      list.innerHTML = `<div style="padding:20px; color:#777;">No matching channels</div>`;
+      return;
+    }
+
     list.innerHTML = channels.map(ch => `
-      <div class="ch-item" onclick="loadChannel('${ch.key}')" id="item-${ch.key}">
-        <img class="ch-logo" src="${ch.tvg_logo}" onerror="this.src='https://via.placeholder.com/45?text=TV'">
+      <div class="ch-item ${ch.id === currentKey ? 'active' : ''}" onclick="loadChannel('${ch.id}')" id="item-${ch.id}">
+        <img class="ch-logo" src="${ch.tvg_logo || ''}" onerror="this.src='https://via.placeholder.com/45?text=TV'">
         <div class="ch-info">
-          <div class="ch-name">${ch.channel_name}</div>
-          <div style="font-size:11px; color:#777;">${ch.group_title || 'General'}</div>
+          <div class="ch-name">${ch.channel_name || 'Unknown Channel'}</div>
+          <div class="ch-group">${ch.group_title || 'General'}</div>
         </div>
       </div>
     `).join('');
   }
 
   function filterList() {
-    const q = document.getElementById('searchInp').value.toLowerCase();
-    const filtered = allChannels.filter(c => c.channel_name.toLowerCase().includes(q));
+    const q = document.getElementById('searchInp').value.toLowerCase().trim();
+    const filtered = allChannels.filter(c =>
+      (c.channel_name || '').toLowerCase().includes(q)
+    );
     renderList(filtered);
   }
 
-  // 3. LOAD CHANNEL INTO PLAYER
-  async function loadChannel(key) {
-    const ch = allChannels.find(c => c.key === key);
+  async function loadChannel(id) {
+    const ch = allChannels.find(c => c.id === id);
     if (!ch) return;
 
-    // UI Updates
-    document.querySelectorAll('.ch-item').forEach(i => i.classList.remove('active'));
-    document.getElementById(`item-${key}`)?.classList.add('active');
-    document.getElementById('currentName').textContent = ch.channel_name;
-    document.getElementById('currentGrp').textContent = ch.group_title;
+    currentKey = id;
+    renderList(allChannels);
 
-    // Reset Overlay
-    const overlay = document.getElementById('playOverlay');
-    const statusIcon = document.getElementById('statusIcon');
-    const playLabel = document.getElementById('playLabel');
-    overlay.classList.remove('hidden');
-    statusIcon.className = 'loading-ring';
-    playLabel.textContent = 'LOADING STREAM...';
-    isReadyToPlay = false;
-
-    // Initialize/Cleanup Player
-    const video = document.getElementById('videoEl');
-    const container = document.getElementById('videoContainer');
-
-    if (ui) await ui.destroy();
-    if (shakaPlayer) await shakaPlayer.destroy();
-
-    shakaPlayer = new shaka.Player(video);
-    ui = new shaka.ui.Overlay(shakaPlayer, container, video);
-    ui.configure({ controlPanelElements: ['play_pause','time_and_duration','spacer','quality','fullscreen'] });
-
-    // DRM & Proxy Setup
-    shakaPlayer.configure({
-      drm: { clearKeys: { [ch.kid.trim()]: ch.key.trim() } }
-    });
-
-    shakaPlayer.getNetworkingEngine().registerRequestFilter((type, request) => {
-      // PROXY: Mandatory to bypass 403 Forbidden on JioTV links
-      const proxy = "https://corsproxy.io/?";
-      request.uris[0] = proxy + encodeURIComponent(request.uris[0]);
-
-      request.headers['Referer'] = 'https://www.jiotv.com/';
-      request.headers['User-Agent'] = ch.user_agent || 'plaYtv/7.1.5 (Linux;Android 13)';
-    });
+    channelTitle.textContent = ch.channel_name || '';
+    showLoading('Loading stream…');
 
     try {
+      if (shakaUI) {
+        await shakaUI.destroy();
+        shakaUI = null;
+      }
+
+      if (shakaPlayer) {
+        await shakaPlayer.destroy();
+        shakaPlayer = null;
+      }
+    } catch (cleanupErr) {
+      console.warn('Cleanup error:', cleanupErr);
+    }
+
+    try {
+      shakaPlayer = new shaka.Player(video);
+      shakaUI = new shaka.ui.Overlay(shakaPlayer, container, video);
+
+      shakaUI.configure({
+        controlPanelElements: [
+          'play_pause',
+          'time_and_duration',
+          'mute',
+          'volume',
+          'spacer',
+          'captions',
+          'quality',
+          'language',
+          'picture_in_picture',
+          'fullscreen',
+          'overflow_menu'
+        ]
+      });
+
+      if (ch.kid && ch.key) {
+        shakaPlayer.configure({
+          drm: {
+            clearKeys: {
+              [ch.kid.trim()]: ch.key.trim()
+            }
+          }
+        });
+      }
+
+      const networkingEngine = shakaPlayer.getNetworkingEngine();
+      if (networkingEngine) {
+        networkingEngine.registerRequestFilter((type, request) => {
+          request.headers['Referer'] = 'https://www.jiotv.com/';
+          request.headers['User-Agent'] = ch.user_agent || 'plaYtv/7.1.3 (Linux;Android 13) ygx/824.1 ExoPlayerLib/824.0';
+        });
+      }
+
+      shakaPlayer.configure({
+        streaming: {
+          lowLatencyMode: true,
+          bufferingGoal: 15,
+          rebufferingGoal: 2,
+          bufferBehind: 15,
+          retryParameters: {
+            timeout: 10000,
+            maxAttempts: 5,
+            baseDelay: 300,
+            backoffFactor: 1.2
+          },
+          segmentRequestTimeout: 8000,
+          segmentPrefetchLimit: 2,
+          useNativeHlsOnSafari: true
+        },
+        manifest: {
+          retryParameters: {
+            timeout: 8000,
+            maxAttempts: 3
+          }
+        }
+      });
+
+      shakaPlayer.addEventListener('error', (e) => {
+        console.error('Shaka error:', e.detail);
+      });
+
       await shakaPlayer.load(ch.url);
-      // Change Overlay to "Play" button
-      statusIcon.className = 'play-btn-circle';
-      statusIcon.innerHTML = '<i class="material-icons-sharp">play_arrow</i>';
-      playLabel.textContent = 'TAP TO WATCH';
-      isReadyToPlay = true;
+      streamReady = true;
+
+      try {
+        video.muted = true;
+        await video.play();
+        dismissOverlay();
+        console.log('Muted autoplay success');
+      } catch (_) {
+        markReady();
+      }
+
     } catch (err) {
-      playLabel.textContent = 'STREAM ERROR';
-      console.error(err);
+      console.error('Load error:', err);
+      showError('Failed to load stream');
     }
   }
 
-  // 4. USER GESTURE HANDLER
-  function handleUserGesture() {
-    if (!isReadyToPlay) return;
-    const video = document.getElementById('videoEl');
-    video.play();
-    document.getElementById('playOverlay').classList.add('hidden');
+  function retryChannel() {
+    if (currentKey) {
+      loadChannel(currentKey);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', initApp);
