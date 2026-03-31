@@ -1,230 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NY Cricket Live — Player</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.ui.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/controls.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp">
-    <style>
-        :root {
-            --bg:#000; --surface:#0a0a0a; --border:#1a1a1a; --border2:#222;
-            --accent:#e8c547; --green:#22c55e; --red:#ef4444; --text:#f0f0f0;
-        }
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;overflow:hidden;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NY CRICKET LIVE</title>
 
-        /* HEADER */
-        header{position:sticky;top:0;z-index:100;height:64px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.97);border-bottom:1px solid var(--border);backdrop-filter:blur(16px);}
-        .logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
-        .logo-img{height:46px;width:auto;object-fit:contain;}
-        .logo-top{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:var(--accent);}
-        .logo-bot{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:5px;color:#444;}
-        .hdr-right{display:flex;align-items:center;gap:10px;}
-        .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
-        .pill-red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.28);color:#ff6b6b;}
-        .live-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;animation:blink 1.3s infinite;}
-        @keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.ui.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/controls.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 
-        /* LAYOUT */
-        .layout{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 64px);}
+  <style>
+    :root {
+      --sidebar-width: 320px;
+      --bg: #000;
+      --surface: #0f0f0f;
+      --accent: #ff0000;
+      --text: #ffffff;
+    }
 
-        /* SIDEBAR */
-        .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-        .sidebar-top{padding:12px;border-bottom:1px solid var(--border);}
-        .search-wrap input{width:100%;background:#0a0a0a;border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);outline:none;}
-        .ch-list{flex:1;overflow-y:auto;padding:10px;}
-        .ch-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;text-decoration:none;color:inherit;margin-bottom:4px;border:1px solid transparent;}
-        .ch-item:hover{background:rgba(255,255,255,0.05);}
-        .ch-item.active{background:rgba(232,197,71,0.1);border-color:var(--accent);}
-        .ch-logo-wrap{width:40px;height:40px;background:#111;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
-        .ch-logo-wrap img{width:100%;height:100%;object-fit:cover;}
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Roboto', sans-serif; height: 100vh; overflow: hidden; }
 
-        /* PLAYER AREA */
-        .player-area{background:#000;display:flex;flex-direction:column;position:relative;}
-        .shaka-video-container{width:100%;aspect-ratio:16/9;background:#000;}
-        video{width:100%;height:100%;}
-        .manual-play-button{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--accent);color:#000;padding:15px 25px;border-radius:8px;cursor:pointer;font-weight:bold;z-index:1000;display:none;}
+    /* LAYOUT SYSTEM */
+    .app-container { display: flex; height: 100vh; width: 100vw; }
 
-        /* INFO BAR */
-        .ch-info-bar{padding:15px 25px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;gap:15px;}
-        .info-name{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);}
+    /* SIDEBAR STYLES */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--surface);
+      border-right: 1px solid #222;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+    .sidebar-header { padding: 20px; border-bottom: 1px solid #222; }
+    .logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent); letter-spacing: 2px; }
+    .search-box { width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #333; border-radius: 4px; color: #fff; margin-top: 10px; outline: none; }
+    .channel-list { flex: 1; overflow-y: auto; padding: 10px; }
+    .ch-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; margin-bottom: 5px; }
+    .ch-item:hover { background: #222; }
+    .ch-item.active { background: #333; border-left: 4px solid var(--accent); }
+    .ch-logo { width: 45px; height: 45px; border-radius: 4px; object-fit: cover; background: #000; }
+    .ch-info { flex: 1; overflow: hidden; }
+    .ch-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* LOADING SCREEN */
-        #loading-screen{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;}
-        .load-text{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:4px;color:var(--accent);}
-        
-        @media(max-width:860px){
-            .layout{grid-template-columns:1fr;}
-            .sidebar{height:300px;}
-            body{overflow:auto;}
-        }
-    </style>
+    /* PLAYER AREA STYLES */
+    .player-main { flex: 1; position: relative; background: #000; display: flex; flex-direction: column; }
+    .shaka-video-container { width: 100%; aspect-ratio: 16/9; position: relative; }
+    video { width: 100%; height: 100%; background: #000; }
+
+    /* YouTube Theme Overrides */
+    .youtube-theme .shaka-played-range { background: var(--accent) !important; }
+    .youtube-theme .shaka-seek-bar-container input[type=range]::-webkit-slider-thumb { background: var(--accent); }
+
+    /* CLICK-TO-PLAY OVERLAY */
+    #playOverlay {
+      position: absolute; inset: 0; z-index: 3000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.8); cursor: pointer; transition: opacity 0.4s;
+    }
+    #playOverlay.hidden { opacity: 0; pointer-events: none; }
+    .play-btn-circle { width: 80px; height: 80px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(255,0,0,0.4); }
+    .play-btn-circle i { font-size: 50px; color: white; margin-left: 5px; }
+    .loading-ring { width: 60px; height: 60px; border: 4px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MOBILE ADJUSTMENTS */
+    @media (max-width: 768px) {
+      .app-container { flex-direction: column; }
+      .sidebar { width: 100%; height: 40%; border-right: none; border-top: 1px solid #222; }
+      .player-main { height: 60%; }
+    }
+  </style>
 </head>
 <body>
 
-<div id="loading-screen">
-    <div class="load-text">NY CRICKET LIVE</div>
-    <p style="font-size:12px; color:#444;">Connecting to stream...</p>
-</div>
-
-<header>
-    <a class="logo" href="#">
-        <div class="logo-words">
-            <div class="logo-top">NY CRICKET</div>
-            <div class="logo-bot">LIVE STREAMING</div>
-        </div>
-    </a>
-    <div class="hdr-right">
-        <div class="pill pill-red"><div class="live-dot"></div>LIVE</div>
+<div class="app-container">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-text">NY CRICKET LIVE</div>
+      <input type="text" class="search-box" id="searchInp" placeholder="Search Channels..." oninput="filterList()">
     </div>
-</header>
+    <div class="channel-list" id="chList">
+      <div style="text-align:center; padding:20px; color:#666;">Fetching JSON...</div>
+    </div>
+  </aside>
 
-<div class="layout">
-    <aside class="sidebar">
-        <div class="sidebar-top">
-            <div class="search-wrap">
-                <input type="text" id="search-inp" placeholder="Search channels..." oninput="filterChannels()">
-            </div>
-        </div>
-        <div class="ch-list" id="ch-list">
-            <p style="padding:20px; color:#444;">Loading list...</p>
-        </div>
-    </aside>
+  <main class="player-main">
+    <div class="shaka-video-container youtube-theme" id="videoContainer">
+      <video id="videoEl" playsinline></video>
 
-    <main class="player-area">
-        <div id="shaka-container" style="width:100%; height:auto;">
-            <video id="video-el" autoplay playsinline></video>
-            <div class="manual-play-button" id="manualPlayButton">CLICK TO UNMUTE & PLAY</div>
-        </div>
-        <div class="ch-info-bar">
-            <div class="info-name" id="info-name">Select a Channel</div>
-        </div>
-    </main>
+      <div id="playOverlay" onclick="handleUserGesture()">
+        <div id="statusIcon" class="loading-ring"></div>
+        <div id="playLabel" style="margin-top:20px; font-weight:bold; letter-spacing:1px;">LOADING STREAM...</div>
+      </div>
+    </div>
+
+    <div style="padding:20px; background:var(--surface);">
+      <h2 id="currentName">Select a Channel</h2>
+      <p id="currentGrp" style="color:#aaa; font-size:14px; margin-top:5px;">Ready to play</p>
+    </div>
+  </main>
 </div>
 
 <script>
-    const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiojson/main/stream.json';
-    let allChannels = [], shakaPlayer = null, ui = null;
+  const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiojson/main/stream.json';
+  let allChannels = [], shakaPlayer = null, ui = null;
+  let isReadyToPlay = false;
 
-    // 1. Initialize Application
-    async function initApp() {
-        try {
-            const res = await fetch(JSON_URL);
-            const data = await res.json();
-            // Convert Object to Array and ensure keys are clean
-            allChannels = Object.entries(data).map(([key, ch]) => ({ 
-                key: key.trim(), 
-                ...ch 
-            }));
-            
-            renderList(allChannels);
-            hideLoading();
-
-            // Check URL for ID
-            const urlParams = new URLSearchParams(window.location.search);
-            const requestedId = urlParams.get('id');
-            if (requestedId) {
-                playChannel(requestedId);
-            }
-        } catch (e) {
-            console.error("Failed to load JSON", e);
-            document.getElementById('ch-list').innerHTML = "<p style='padding:20px;'>Error loading data.</p>";
-        }
+  // 1. INIT APP
+  async function initApp() {
+    shaka.polyfill.installAll();
+    if (!shaka.Player.isBrowserSupported()) {
+      alert("Browser not supported!");
+      return;
     }
 
-    function hideLoading() {
-        const loader = document.getElementById('loading-screen');
-        if (loader) loader.style.display = 'none';
+    try {
+      const res = await fetch(JSON_URL);
+      const data = await res.json();
+      allChannels = Object.entries(data).map(([key, ch]) => ({ key, ...ch }));
+      renderList(allChannels);
+
+      // Auto-load first channel if nothing selected
+      if (allChannels.length > 0) loadChannel(allChannels[0].key);
+    } catch (e) {
+      document.getElementById('chList').innerHTML = `<div style="padding:20px; color:red;">Failed to load JSON</div>`;
     }
+  }
 
-    function renderList(channels) {
-        const list = document.getElementById('ch-list');
-        list.innerHTML = channels.map(ch => `
-            <a class="ch-item" href="javascript:void(0)" onclick="playChannel('${ch.key}')" id="ch-${ch.key}">
-                <div class="ch-logo-wrap">
-                    <img src="${ch.tvg_logo || ''}" onerror="this.src='https://via.placeholder.com/40?text=TV'">
-                </div>
-                <div>
-                    <div style="font-size:13px; font-weight:600;">${ch.channel_name}</div>
-                    <div style="font-size:10px; color:#555;">${ch.group_title || 'General'}</div>
-                </div>
-            </a>
-        `).join('');
+  // 2. RENDER LIST
+  function renderList(channels) {
+    const list = document.getElementById('chList');
+    list.innerHTML = channels.map(ch => `
+      <div class="ch-item" onclick="loadChannel('${ch.key}')" id="item-${ch.key}">
+        <img class="ch-logo" src="${ch.tvg_logo}" onerror="this.src='https://via.placeholder.com/45?text=TV'">
+        <div class="ch-info">
+          <div class="ch-name">${ch.channel_name}</div>
+          <div style="font-size:11px; color:#777;">${ch.group_title || 'General'}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function filterList() {
+    const q = document.getElementById('searchInp').value.toLowerCase();
+    const filtered = allChannels.filter(c => c.channel_name.toLowerCase().includes(q));
+    renderList(filtered);
+  }
+
+  // 3. LOAD CHANNEL INTO PLAYER
+  async function loadChannel(key) {
+    const ch = allChannels.find(c => c.key === key);
+    if (!ch) return;
+
+    // UI Updates
+    document.querySelectorAll('.ch-item').forEach(i => i.classList.remove('active'));
+    document.getElementById(`item-${key}`)?.classList.add('active');
+    document.getElementById('currentName').textContent = ch.channel_name;
+    document.getElementById('currentGrp').textContent = ch.group_title;
+
+    // Reset Overlay
+    const overlay = document.getElementById('playOverlay');
+    const statusIcon = document.getElementById('statusIcon');
+    const playLabel = document.getElementById('playLabel');
+    overlay.classList.remove('hidden');
+    statusIcon.className = 'loading-ring';
+    playLabel.textContent = 'LOADING STREAM...';
+    isReadyToPlay = false;
+
+    // Initialize/Cleanup Player
+    const video = document.getElementById('videoEl');
+    const container = document.getElementById('videoContainer');
+
+    if (ui) await ui.destroy();
+    if (shakaPlayer) await shakaPlayer.destroy();
+
+    shakaPlayer = new shaka.Player(video);
+    ui = new shaka.ui.Overlay(shakaPlayer, container, video);
+    ui.configure({ controlPanelElements: ['play_pause','time_and_duration','spacer','quality','fullscreen'] });
+
+    // DRM & Proxy Setup
+    shakaPlayer.configure({
+      drm: { clearKeys: { [ch.kid.trim()]: ch.key.trim() } }
+    });
+
+    shakaPlayer.getNetworkingEngine().registerRequestFilter((type, request) => {
+      // PROXY: Mandatory to bypass 403 Forbidden on JioTV links
+      const proxy = "https://corsproxy.io/?";
+      request.uris[0] = proxy + encodeURIComponent(request.uris[0]);
+
+      request.headers['Referer'] = 'https://www.jiotv.com/';
+      request.headers['User-Agent'] = ch.user_agent || 'plaYtv/7.1.5 (Linux;Android 13)';
+    });
+
+    try {
+      await shakaPlayer.load(ch.url);
+      // Change Overlay to "Play" button
+      statusIcon.className = 'play-btn-circle';
+      statusIcon.innerHTML = '<i class="material-icons-sharp">play_arrow</i>';
+      playLabel.textContent = 'TAP TO WATCH';
+      isReadyToPlay = true;
+    } catch (err) {
+      playLabel.textContent = 'STREAM ERROR';
+      console.error(err);
     }
+  }
 
-    function filterChannels() {
-        const q = document.getElementById('search-inp').value.toLowerCase();
-        const filtered = allChannels.filter(c => c.channel_name.toLowerCase().includes(q));
-        renderList(filtered);
-    }
+  // 4. USER GESTURE HANDLER
+  function handleUserGesture() {
+    if (!isReadyToPlay) return;
+    const video = document.getElementById('videoEl');
+    video.play();
+    document.getElementById('playOverlay').classList.add('hidden');
+  }
 
-    async function playChannel(key) {
-        const ch = allChannels.find(c => c.key === key);
-        if (!ch) return;
-
-        // UI Updates
-        document.querySelectorAll('.ch-item').forEach(el => el.classList.remove('active'));
-        const activeItem = document.getElementById(`ch-${key}`);
-        if(activeItem) activeItem.classList.add('active');
-        document.getElementById('info-name').textContent = ch.channel_name;
-
-        await setupPlayer(ch);
-    }
-
-    async function setupPlayer(ch) {
-        const video = document.getElementById('video-el');
-        const container = document.getElementById('shaka-container');
-        const playBtn = document.getElementById('manualPlayButton');
-
-        // Cleanup
-        if (ui) { await ui.destroy(); ui = null; }
-        if (shakaPlayer) { await shakaPlayer.destroy(); shakaPlayer = null; }
-
-        shakaPlayer = new shaka.Player(video);
-        ui = new shaka.ui.Overlay(shakaPlayer, container, video);
-        
-        // Configuration
-        shakaPlayer.configure({
-            streaming: { lowLatencyMode: true },
-            drm: {
-                clearKeys: (ch.kid && ch.key) ? { [ch.kid.trim()]: ch.key.trim() } : {}
-            }
-        });
-
-        // Headers
-        shakaPlayer.getNetworkingEngine().registerRequestFilter((type, request) => {
-            request.headers['User-Agent'] = ch.user_agent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
-        });
-
-        try {
-            await shakaPlayer.load(ch.url);
-            playBtn.style.display = 'none';
-            
-            // Try to play
-            try {
-                await video.play();
-            } catch (e) {
-                // If browser blocks, show play button
-                playBtn.style.display = 'block';
-                playBtn.onclick = () => {
-                    video.muted = false;
-                    video.play();
-                    playBtn.style.display = 'none';
-                };
-            }
-        } catch (err) {
-            console.error("Playback Error", err);
-            alert("Stream currently unavailable.");
-        }
-    }
-
-    // Start App
-    document.addEventListener('shaka-ui-loaded', initApp);
-    // Fallback if event is missed
-    setTimeout(() => { if(allChannels.length === 0) initApp(); }, 2000);
+  document.addEventListener('DOMContentLoaded', initApp);
 </script>
 
 </body>
