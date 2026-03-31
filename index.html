@@ -137,7 +137,6 @@ header{position:sticky;top:0;z-index:100;height:64px;padding:0 32px;display:flex
   </div>
 
   <div class="ch-count-row" id="ch-count-label">Loading…</div>
-
   <div class="ch-grid" id="ch-grid"></div>
 </div>
 
@@ -145,7 +144,9 @@ header{position:sticky;top:0;z-index:100;height:64px;padding:0 32px;display:flex
 
 <script>
 const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiooutputwithplayer/main/output.json';
-let allChannels = [], filtered = [], currentCat = 'All';
+let allChannels = [];
+let filtered = [];
+let currentCat = 'All';
 
 const catEmoji = {
   'Cricket':'🏏',
@@ -162,39 +163,39 @@ const catEmoji = {
   'Lifestyle':'✨'
 };
 
-const getCE = c => catEmoji[c] || '📺';
+function getCE(c) {
+  return catEmoji[c] || '📺';
+}
 
 function showSkeletons() {
-  document.getElementById('ch-grid').innerHTML = Array(16).fill(0).map(() =>
-    `<div class="skel-card">
+  const grid = document.getElementById('ch-grid');
+  grid.innerHTML = Array(16).fill('').map(() => `
+    <div class="skel-card">
       <div class="skel skel-card-top"></div>
       <div class="skel-card-body">
         <div class="skel skel-line w80"></div>
         <div class="skel skel-line w50"></div>
       </div>
-    </div>`
-  ).join('');
+    </div>
+  `).join('');
 }
 
 async function loadChannels() {
   showSkeletons();
 
   try {
-    const res = await fetch(JSON_URL);
+    const res = await fetch(JSON_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
     const data = await res.json();
-
-    if (!Array.isArray(data)) {
-      throw new Error('Invalid JSON format: expected array');
-    }
+    if (!Array.isArray(data)) throw new Error('Invalid JSON format');
 
     allChannels = data.map(ch => ({
-      id: ch.id || '',
-      name: ch.name || 'Unknown Channel',
-      logo: ch.logo || '',
-      group: ch.group || 'General',
-      link: ch.link || '#'
+      id: String(ch.id || ''),
+      name: String(ch.name || 'Unknown Channel'),
+      logo: String(ch.logo || ''),
+      group: String(ch.group || 'General'),
+      link: String(ch.link || '#')
     }));
 
     buildCats();
@@ -203,7 +204,8 @@ async function loadChannels() {
     document.getElementById('ch-count-pill').textContent = allChannels.length + ' CHANNELS';
     hideLoading();
     toast('✦ ' + allChannels.length + ' channels loaded', 'ok');
-  } catch (e) {
+  } catch (err) {
+    console.error('Load error:', err);
     document.getElementById('ch-grid').innerHTML = `
       <div class="err-state">
         <p>Failed to load channels</p>
@@ -214,14 +216,13 @@ async function loadChannels() {
     document.getElementById('ch-count-pill').textContent = '0 CHANNELS';
     hideLoading();
     toast('Failed to load channels', 'err');
-    console.error(e);
   }
 }
 
 function hideLoading() {
   const el = document.getElementById('loading-screen');
   if (!el) return;
-  el.style.transition = 'opacity 0.5s';
+  el.style.transition = 'opacity 0.5s ease';
   el.style.opacity = '0';
   setTimeout(() => {
     if (el.parentNode) el.remove();
@@ -232,11 +233,11 @@ function buildCats() {
   const cats = ['All', ...new Set(allChannels.map(c => c.group).filter(Boolean))]
     .sort((a, b) => a === 'All' ? -1 : b === 'All' ? 1 : a.localeCompare(b));
 
-  document.getElementById('cat-tabs').innerHTML = cats.map(c =>
-    `<button class="cat-btn${c === 'All' ? ' active' : ''}" data-cat="${escapeHtml(c)}" onclick="selectCat(this)">
+  document.getElementById('cat-tabs').innerHTML = cats.map(c => `
+    <button class="cat-btn${c === 'All' ? ' active' : ''}" data-cat="${escapeAttr(c)}" onclick="selectCat(this)">
       ${getCE(c)} ${escapeHtml(c)}
-    </button>`
-  ).join('');
+    </button>
+  `).join('');
 }
 
 function selectCat(btn) {
@@ -274,10 +275,12 @@ function renderGrid() {
   grid.innerHTML = filtered.map(ch => `
     <a class="ch-card" href="${escapeAttr(ch.link)}" target="_blank" rel="noopener noreferrer">
       <div class="ch-card-top">
-        ${ch.logo
+        ${
+          ch.logo
           ? `<img src="${escapeAttr(ch.logo)}" alt="${escapeAttr(ch.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="ch-ph-big" style="display:none">${getCE(ch.group)}</span>`
           : `<span class="ch-ph-big">${getCE(ch.group)}</span>`
-                  <span class="ch-live-tag">● LIVE</span>
+        }
+        <span class="ch-live-tag">● LIVE</span>
         <span class="ch-num-tag">${escapeHtml(ch.id)}</span>
       </div>
       <div class="ch-card-body">
@@ -294,23 +297,34 @@ function toast(msg, type = 'info') {
   t.className = `toast${type === 'ok' ? ' t-ok' : type === 'err' ? ' t-err' : ''}`;
   t.textContent = msg;
   c.appendChild(t);
+
   setTimeout(() => {
     if (t.parentNode) t.remove();
   }, 3000);
 }
 
 function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, m => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-  }[m]));
+  return String(str).replace(/[&<>"']/g, function(m) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[m];
+  });
 }
 
 function escapeAttr(str) {
-  return String(str).replace(/"/g, '&quot;');
+  return String(str).replace(/[&<>"']/g, function(m) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[m];
+  });
 }
 
 loadChannels();
