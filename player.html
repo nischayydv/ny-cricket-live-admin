@@ -277,8 +277,9 @@ video{width:100%;height:100%;background:#000;object-fit:contain;display:block;}
 <div id="toasts"></div>
 
 <script>
+<script>
 const JSON_URL = 'https://raw.githubusercontent.com/nischayydv/jiojson/main/stream.json';
-let allChannels = [], filtered = [], currentCat = 'All', shakaPlayer = null;
+let allChannels = [], filtered = [], currentCat = 'All', shakaPlayer = null, ui = null;
 
 // Read ?id= from URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -288,203 +289,190 @@ const catEmoji = {'Cricket':'🏏','Sports':'⚽','Business News':'📈','Entert
 const getCE = c => catEmoji[c] || '📺';
 
 async function loadChannels() {
-  try {
-    const res = await fetch(JSON_URL);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    allChannels = Object.entries(data).map(([key, ch]) => ({ key, ...ch }));
-    buildCats();
-    filterChannels();
-    document.getElementById('ch-count-pill').textContent = allChannels.length + ' CHANNELS';
-    hideLoading();
+    try {
+        const res = await fetch(JSON_URL);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        
+        // Map the object into an array for easier filtering
+        allChannels = Object.entries(data).map(([key, ch]) => ({ key, ...ch }));
+        
+        buildCats();
+        filterChannels();
+        document.getElementById('ch-count-pill').textContent = allChannels.length + ' CHANNELS';
+        hideLoading();
 
-    // Auto-play the requested channel
-    if (requestedId) {
-      const ch = allChannels.find(c => c.key === requestedId);
-      if (ch) {
-        document.title = `${ch.channel_name || 'Channel '+ch.key} — NY Cricket Live`;
-        playChannel(ch.key);
-      } else {
-        showNoSel();
-      }
-    } else {
-      showNoSel();
+        if (requestedId) {
+            const ch = allChannels.find(c => c.key === requestedId);
+            if (ch) {
+                playChannel(ch.key);
+            } else {
+                showNoSel();
+            }
+        } else {
+            showNoSel();
+        }
+    } catch(e) {
+        console.error("Load Error:", e);
+        document.getElementById('ch-list').innerHTML = `<div class="err-state"><p>Failed to load channels</p><button onclick="loadChannels()">↺ Retry</button></div>`;
+        hideLoading();
     }
-  } catch(e) {
-    document.getElementById('ch-list').innerHTML = `<div class="err-state"><p>Failed to load channels</p><button onclick="loadChannels()">↺ Retry</button></div>`;
-    hideLoading();
-    toast('Failed to load channels', 'err');
-  }
 }
 
 function hideLoading() {
-  const el = document.getElementById('loading-screen');
-  el.style.transition = 'opacity 0.5s';
-  el.style.opacity = '0';
-  setTimeout(() => el.remove(), 500);
+    const el = document.getElementById('loading-screen');
+    if(el) {
+        el.style.transition = 'opacity 0.5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+    }
 }
 
 function showNoSel() {
-  document.getElementById('no-sel').style.display = 'flex';
-  document.getElementById('player-wrapper').style.display = 'none';
+    document.getElementById('no-sel').style.display = 'flex';
+    document.getElementById('player-wrapper').style.display = 'none';
 }
 
 function buildCats() {
-  const cats = ['All', ...new Set(allChannels.map(c => c.group_title).filter(Boolean))].sort((a,b) => a==='All'?-1:b==='All'?1:a.localeCompare(b));
-  document.getElementById('cat-tabs').innerHTML = cats.map(c =>
-    `<button class="cat-btn${c==='All'?' active':''}" data-cat="${c}" onclick="selectCat(this)">${getCE(c)} ${c}</button>`
-  ).join('');
+    const cats = ['All', ...new Set(allChannels.map(c => c.group_title).filter(Boolean))].sort((a,b) => a==='All'?-1:b==='All'?1:a.localeCompare(b));
+    document.getElementById('cat-tabs').innerHTML = cats.map(c =>
+        `<button class="cat-btn${c==='All'?' active':''}" data-cat="${c}" onclick="selectCat(this)">${getCE(c)} ${c}</button>`
+    ).join('');
 }
 
 function selectCat(btn) {
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentCat = btn.dataset.cat;
-  filterChannels();
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCat = btn.dataset.cat;
+    filterChannels();
 }
 
 function filterChannels() {
-  const q = document.getElementById('search-inp').value.toLowerCase();
-  filtered = allChannels.filter(ch =>
-    (currentCat === 'All' || ch.group_title === currentCat) &&
-    (!q || (ch.channel_name||'').toLowerCase().includes(q) || (ch.group_title||'').toLowerCase().includes(q))
-  );
-  document.getElementById('ch-count-label').textContent = filtered.length + ' CHANNELS';
-  renderList();
+    const q = document.getElementById('search-inp').value.toLowerCase();
+    filtered = allChannels.filter(ch =>
+        (currentCat === 'All' || ch.group_title === currentCat) &&
+        (!q || (ch.channel_name||'').toLowerCase().includes(q))
+    );
+    document.getElementById('ch-count-label').textContent = filtered.length + ' CHANNELS';
+    renderList();
 }
 
 function renderList() {
-  const list = document.getElementById('ch-list');
-  if (!filtered.length) { list.innerHTML = '<div class="err-state"><p>No channels found</p></div>'; return; }
-  list.innerHTML = filtered.map(ch => `
-    <a class="ch-item${ch.key===requestedId?' active':''}" href="player.html?id=${encodeURIComponent(ch.key)}">
-      <div class="ch-logo-wrap">
-        ${ch.tvg_logo
-          ? `<img src="${ch.tvg_logo}" alt="" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
-          : ''}
-        <span class="ch-ph" style="${ch.tvg_logo?'display:none':'display:flex'}">${getCE(ch.group_title)}</span>
-      </div>
-      <div class="ch-info">
-        <div class="ch-name-s">${ch.channel_name || 'Channel '+ch.key}</div>
-        <div class="ch-cat-s">${ch.group_title || 'General'}</div>
-      </div>
-      <span class="ch-live-badge">LIVE</span>
-    </a>
-  `).join('');
+    const list = document.getElementById('ch-list');
+    if (!filtered.length) { list.innerHTML = '<div class="err-state"><p>No channels found</p></div>'; return; }
+    list.innerHTML = filtered.map(ch => `
+        <a class="ch-item${ch.key===requestedId?' active':''}" href="player.html?id=${encodeURIComponent(ch.key)}">
+            <div class="ch-logo-wrap">
+                ${ch.tvg_logo ? `<img src="${ch.tvg_logo}" alt="" onerror="this.style.display='none';this.nextSibling.style.display='flex'">` : ''}
+                <span class="ch-ph" style="${ch.tvg_logo?'display:none':'display:flex'}">${getCE(ch.group_title)}</span>
+            </div>
+            <div class="ch-info">
+                <div class="ch-name-s">${ch.channel_name || 'Channel '+ch.key}</div>
+                <div class="ch-cat-s">${ch.group_title || 'General'}</div>
+            </div>
+            <span class="ch-live-badge">LIVE</span>
+        </a>
+    `).join('');
 }
 
 async function playChannel(key) {
-  const ch = allChannels.find(c => c.key === key);
-  if (!ch) return;
+    const ch = allChannels.find(c => c.key === key);
+    if (!ch) return;
 
-  document.getElementById('no-sel').style.display = 'none';
-  const pw = document.getElementById('player-wrapper');
-  pw.style.display = 'flex';
+    document.getElementById('no-sel').style.display = 'none';
+    document.getElementById('player-wrapper').style.display = 'flex';
 
-  const npLogo = document.getElementById('np-logo');
-  npLogo.innerHTML = ch.tvg_logo
-    ? `<img src="${ch.tvg_logo}" alt="" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover;">`
-    : getCE(ch.group_title);
-  document.getElementById('info-num').textContent = ch.key;
-  document.getElementById('info-name').textContent = ch.channel_name || 'Channel '+ch.key;
-  document.getElementById('info-cat').textContent = ch.group_title || 'General';
-  document.getElementById('info-grp').textContent = ch.group_title || 'General';
-  document.getElementById('channelTitle').textContent = ch.channel_name || '';
-  document.getElementById('manualPlayButton').style.display = 'none';
+    document.getElementById('np-logo').innerHTML = ch.tvg_logo 
+        ? `<img src="${ch.tvg_logo}" style="width:100%;height:100%;object-fit:cover;">` 
+        : getCE(ch.group_title);
+        
+    document.getElementById('info-num').textContent = ch.key;
+    document.getElementById('info-name').textContent = ch.channel_name || 'Channel '+ch.key;
+    document.getElementById('info-cat').textContent = ch.group_title || 'General';
+    document.getElementById('info-grp').textContent = ch.group_title || 'General';
+    document.getElementById('channelTitle').textContent = ch.channel_name || '';
 
-  // Update URL without reload so back button works cleanly
-  history.replaceState(null, '', `player.html?id=${encodeURIComponent(key)}`);
-  document.title = `${ch.channel_name || 'Channel '+key} — NY Cricket Live`;
+    // Update URL metadata
+    history.replaceState(null, '', `player.html?id=${encodeURIComponent(key)}`);
+    document.title = `${ch.channel_name || 'Channel '+key} — NY Cricket Live`;
 
-  await initShaka(ch);
+    await initShaka(ch);
 }
 
-/* ── Shaka init ── */
 async function initShaka(ch) {
-  const video = document.getElementById('video-el');
-  const container = document.getElementById('shaka-container');
-  const manualBtn = document.getElementById('manualPlayButton');
+    const video = document.getElementById('video-el');
+    const container = document.getElementById('shaka-container');
+    const manualBtn = document.getElementById('manualPlayButton');
 
-  if (shakaPlayer) { try { await shakaPlayer.destroy(); } catch(e) {} shakaPlayer = null; }
-  if (!shaka.Player.isBrowserSupported()) { alert('Browser not supported'); return; }
+    // Clean up existing player
+    if (ui) { await ui.destroy(); ui = null; }
+    if (shakaPlayer) { await shakaPlayer.destroy(); shakaPlayer = null; }
 
-  shakaPlayer = new shaka.Player(video);
-  const ui = new shaka.ui.Overlay(shakaPlayer, container, video);
-  ui.configure({ controlPanelElements: ['play_pause','time_and_duration','mute','volume','spacer','captions','quality','language','picture_in_picture','fullscreen','overflow_menu'] });
+    shakaPlayer = new shaka.Player(video);
+    ui = new shaka.ui.Overlay(shakaPlayer, container, video);
+    
+    ui.configure({ 
+        controlPanelElements: ['play_pause','time_and_duration','mute','volume','spacer','quality','fullscreen','overflow_menu'] 
+    });
 
-  if (ch.kid && ch.key) {
-    shakaPlayer.configure({ drm: { clearKeys: { [ch.kid]: ch.key } } });
-  }
-
-  shakaPlayer.getNetworkingEngine().registerRequestFilter((type, request) => {
-    request.headers['Referer'] = 'https://www.jiotv.com/';
-    request.headers['User-Agent'] = ch.user_agent || 'plaYtv/7.1.5 (Linux;Android 13) ExoPlayerLib/2.11.6';
-  });
-
-  shakaPlayer.configure({
-    streaming: {
-      lowLatencyMode: true, bufferingGoal: 15, rebufferingGoal: 2, bufferBehind: 15,
-      retryParameters: { timeout: 10000, maxAttempts: 5, baseDelay: 300, backoffFactor: 1.2 },
-      segmentRequestTimeout: 8000, segmentPrefetchLimit: 2, useNativeHlsOnSafari: true
-    },
-    manifest: { retryParameters: { timeout: 8000, maxAttempts: 3 } }
-  });
-
-  const attemptAutoplay = async () => {
-    try { video.muted = false; await video.play(); return true; }
-    catch(e1) {
-      try { video.muted = true; await video.play(); return true; }
-      catch(e2) { return false; }
+    // DRM Configuration - Handling ClearKeys
+    if (ch.kid && ch.key) {
+        shakaPlayer.configure({
+            drm: {
+                clearKeys: {
+                    [ch.kid.trim()]: ch.key.trim()
+                }
+            }
+        });
     }
-  };
 
-  shakaPlayer.addEventListener('error', e => console.error('Shaka error:', e.detail));
+    // Networking Filters
+    shakaPlayer.getNetworkingEngine().registerRequestFilter((type, request) => {
+        // Apply headers for manifest and segments
+        request.headers['User-Agent'] = ch.user_agent || 'plaYtv/7.1.5 (Linux;Android 13) ExoPlayerLib/2.11.6';
+        // Note: Browsers often block manual Referer overrides for security
+        request.headers['Referer'] = 'https://www.jiotv.com/';
+    });
 
-  video.addEventListener('play', () => {
-    if (window.self === window.top && !document.fullscreenElement && window.innerWidth <= 768) {
-      container.requestFullscreen().catch(() => {});
+    shakaPlayer.configure({
+        streaming: {
+            lowLatencyMode: true,
+            bufferingGoal: 10,
+            rebufferingGoal: 2,
+        }
+    });
+
+    try {
+        await shakaPlayer.load(ch.url);
+        // Attempt autoplay
+        try {
+            await video.play();
+            manualBtn.style.display = 'none';
+        } catch (e) {
+            // If blocked by browser (silent autoplay), show button
+            video.muted = true;
+            try {
+                await video.play();
+                manualBtn.style.display = 'none';
+            } catch (e2) {
+                manualBtn.style.display = 'block';
+            }
+        }
+    } catch (err) {
+        console.error('Error loading stream:', err);
+        manualBtn.textContent = '⚠ Stream Error - Tap to Retry';
+        manualBtn.style.display = 'block';
     }
-  }, { once: true });
 
-  video.addEventListener('loadedmetadata', () => { video.volume = 0.8; });
-
-  let hasUserInteracted = false;
-  const enableSound = () => { if (!hasUserInteracted && video.muted) { video.muted = false; hasUserInteracted = true; } };
-  ['click','touchstart','keydown'].forEach(ev => document.addEventListener(ev, enableSound, { once: true }));
-
-  try {
-    await shakaPlayer.load(ch.url);
-    const auto = await attemptAutoplay();
-    if (!auto) manualBtn.style.display = 'block';
-  } catch(err) {
-    console.error('Load error:', err);
-    manualBtn.textContent = '⚠ Stream unavailable — tap to retry';
-    manualBtn.style.display = 'block';
-    manualBtn.onclick = () => { manualBtn.style.display = 'none'; playChannel(ch.key); };
-    return;
-  }
-
-  manualBtn.addEventListener('click', async () => {
-    manualBtn.style.display = 'none';
-    video.muted = false;
-    try { await video.play(); } catch(e) { console.error(e); }
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && video.paused) attemptAutoplay();
-  });
+    manualBtn.onclick = async () => {
+        manualBtn.style.display = 'none';
+        video.muted = false;
+        await video.play();
+    };
 }
 
-function toast(msg, type='info') {
-  const c = document.getElementById('toasts');
-  const t = document.createElement('div');
-  t.className = `toast${type==='ok'?' t-ok':type==='err'?' t-err':''}`;
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
-}
-
-loadChannels();
+// Initial Load
+document.addEventListener('shaka-ui-loaded', loadChannels);
+// Fallback if UI doesn't fire event
+if (document.readyState !== 'loading') { setTimeout(loadChannels, 1000); }
 </script>
-</body>
-</html>
