@@ -402,165 +402,67 @@
     loadChannels();
   </script>
 <script>
-(function() {
-  'use strict';
+  /* ── Anti-DevTools Protection ── */
 
-  /* ── HIDE PAGE INSTANTLY before anything renders ── */
-  document.documentElement.style.visibility = 'hidden';
-  document.documentElement.style.opacity = '0';
+  // 1. Block right-click
+  document.addEventListener('contextmenu', e => e.preventDefault());
 
-  /* ── Nuclear redirect ── */
-  function killPage() {
-    try {
-      document.documentElement.style.visibility = 'visible';
-      document.documentElement.style.opacity = '1';
-      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#ff3333;font-family:monospace;font-size:22px;letter-spacing:2px;">⛔ ACCESS DENIED</div>';
-      document.title = '403 Forbidden';
-    } catch(e) {}
-    setTimeout(() => window.location.replace('about:blank'), 1000);
-  }
-
-  /* ── REVEAL PAGE only after all guards are armed ── */
-  function revealPage() {
-    document.documentElement.style.visibility = 'visible';
-    document.documentElement.style.opacity = '1';
-  }
-
-  /* ── 1. BLOCK RIGHT-CLICK ── */
-  document.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); return false; }, true);
-  document.addEventListener('mousedown',   e => { if (e.button === 2) { e.preventDefault(); return false; } }, true);
-  document.addEventListener('pointerdown', e => { if (e.button === 2) { e.preventDefault(); return false; } }, true);
-
-  /* ── 2. BLOCK KEYBOARD SHORTCUTS ── */
-  const blockedKeys      = new Set(['F12','F5','F7','F8','F9','F10','F11']);
-  const blockedCtrlShift = new Set(['i','I','j','J','c','C','k','K','e','E','m','M','o','O','p','P','q','Q']);
-  const blockedCtrl      = new Set(['u','U','s','S','p','P']);
-
+  // 2. Block keyboard shortcuts
   document.addEventListener('keydown', e => {
-    if (blockedKeys.has(e.key)) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-    if (e.ctrlKey && e.shiftKey && blockedCtrlShift.has(e.key)) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-    if (e.ctrlKey && !e.shiftKey && !e.altKey && blockedCtrl.has(e.key)) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
-    if (e.metaKey && blockedCtrl.has(e.key)) { e.preventDefault(); return false; }
-  }, true);
-  document.addEventListener('keyup',    e => { if (blockedKeys.has(e.key)) { e.preventDefault(); return false; } }, true);
-  document.addEventListener('keypress', e => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); return false; } }, true);
+    // F12
+    if (e.key === 'F12') { e.preventDefault(); return false; }
+    // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C
+    if (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key)) {
+      e.preventDefault(); return false;
+    }
+    // Ctrl+U (view source)
+    if (e.ctrlKey && ['U','u'].includes(e.key)) {
+      e.preventDefault(); return false;
+    }
+    // Ctrl+S (save page)
+    if (e.ctrlKey && ['S','s'].includes(e.key)) {
+      e.preventDefault(); return false;
+    }
+  });
 
-  /* ── 3. DEVTOOLS SIZE DETECTION ── */
-  setTimeout(function() {
-    let devtoolsOpen = false;
-    const THRESHOLD = 100;
+  // 3. Debugger loop — makes the JS debugger unusable
+  (function devtoolsDebuggerLoop() {
+    function loop() {
+      (function() {})['constructor']('debugger')();
+    }
+    try { loop(); } catch(e) {}
+    requestAnimationFrame(devtoolsDebuggerLoop);
+  })();
 
-    function sizeCheck() {
-      const wDiff = window.outerWidth  - window.innerWidth;
-      const hDiff = window.outerHeight - window.innerHeight;
-      if (wDiff > THRESHOLD || hDiff > THRESHOLD) {
-        if (!devtoolsOpen) { devtoolsOpen = true; killPage(); }
-      } else {
-        devtoolsOpen = false;
+  // 4. DevTools size detection — redirect if devtools detected
+  (function detectDevtools() {
+    const threshold = 160;
+    function check() {
+      const widthDiff  = window.outerWidth  - window.innerWidth;
+      const heightDiff = window.outerHeight - window.innerHeight;
+      if (widthDiff > threshold || heightDiff > threshold) {
+        // Devtools likely open — redirect to blank or close
+        document.body.innerHTML = '';
+        document.title = 'Access Denied';
+        window.location.replace('about:blank');
       }
     }
+    setInterval(check, 1000);
+    window.addEventListener('resize', check);
+  })();
 
-    // Check BEFORE revealing — if devtools already open, never show page
-    sizeCheck();
-    setInterval(sizeCheck, 500);
-    window.addEventListener('resize', sizeCheck, true);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) sizeCheck(); });
-  }, 500);
-
-  /* ── 4. CONSOLE IMAGE TRAP ── */
-  setTimeout(function() {
-    let element = new Image();
-    Object.defineProperty(element, 'id', {
-      get: function() { killPage(); }
-    });
-    setInterval(function() {
-      try { console.log('%c', element); } catch(e) {}
+  // 5. Console warning + periodic clear
+  (function consoleGuard() {
+    const msg = '%c⛔ Unauthorized access is not permitted.';
+    const style = 'color: red; font-size: 18px; font-weight: bold;';
+    setInterval(() => {
+      console.clear();
+      console.log(msg, style);
     }, 1500);
-  }, 500);
+  })();
 
-  /* ── 5. DEBUGGER TRAP ── */
-  setTimeout(function() {
-    setInterval(function() {
-      try {
-        (function() {})['constructor']('debugger')();
-      } catch(e) {}
-    }, 100);
-  }, 2000);
-
-  /* ── 6. NUKE CONSOLE ── */
-  setTimeout(function() {
-    const noop = () => {};
-    const methods = ['log','warn','error','info','debug','dir','table','trace',
-                     'group','groupEnd','time','timeEnd','assert','clear','count',
-                     'dirxml','profile','profileEnd','timeStamp'];
-    methods.forEach(m => {
-      try {
-        Object.defineProperty(console, m, {
-          get: () => noop, set: () => {}, configurable: false
-        });
-      } catch(e) {}
-    });
-    setInterval(() => { try { console.clear(); } catch(e) {} }, 300);
-  }, 500);
-
-  /* ── 7. DISABLE SELECTION + COPY ── */
-  document.addEventListener('selectstart', e => e.preventDefault(), true);
-  document.addEventListener('dragstart',   e => e.preventDefault(), true);
-  document.addEventListener('copy',        e => e.preventDefault(), true);
-  document.addEventListener('cut',         e => e.preventDefault(), true);
-
-  /* ── 8. IFRAME BUST ── */
-  if (window.top !== window.self) {
-    try { window.top.location = window.self.location; } catch(e) { killPage(); }
-  }
-
-  /* ── 9. MUTATION OBSERVER ── */
-  const domObserver = new MutationObserver(mutations => {
-    mutations.forEach(m => {
-      m.addedNodes.forEach(node => {
-        if (node.nodeType === 1) {
-          const tag = (node.tagName || '').toLowerCase();
-          const src = (node.src || node.href || '').toLowerCase();
-          if ((tag === 'script') && src &&
-              !src.includes(location.hostname) &&
-              !src.includes('postimg') &&
-              !src.includes('googleapis') &&
-              !src.includes('githubusercontent') &&
-              !src.includes('fonts.g')) {
-            node.remove();
-          }
-        }
-      });
-    });
-  });
-  domObserver.observe(document.documentElement, { childList: true, subtree: true });
-
-  /* ── 10. FOCUS GUARD ── */
-  let blurTime = 0;
-  window.addEventListener('blur', () => { blurTime = Date.now(); });
-  window.addEventListener('focus', () => {
-    if (blurTime > 0 && (Date.now() - blurTime) < 3000) {
-      const wDiff = window.outerWidth  - window.innerWidth;
-      const hDiff = window.outerHeight - window.innerHeight;
-      if (wDiff > 100 || hDiff > 100) killPage();
-    }
-  });
-
-  /* ── 11. CSS PROTECTION ── */
-  const s = document.createElement('style');
-  s.textContent = `
-    *{-webkit-user-select:none!important;-moz-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}
-    input,textarea,[contenteditable]{-webkit-user-select:text!important;user-select:text!important;}
-    ::selection{background:transparent!important;}
-  `;
-  document.head.appendChild(s);
-
-  /* ══════════════════════════════════════════
-     ── REVEAL PAGE after 2s — all guards armed
-     ══════════════════════════════════════════ */
-  setTimeout(revealPage, 2000);
-
-})();
+  // 6. Disable text selection (optional — helps prevent copy-paste of source snippets)
+  document.addEventListener('selectstart', e => e.preventDefault());
 </script>
 </body>
 </html>
