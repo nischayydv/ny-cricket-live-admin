@@ -1,5 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+  <!-- ⚠️ MUST BE FIRST — before everything else -->
+  <script>
+    document.documentElement.style.visibility = 'hidden';
+    document.documentElement.style.background = '#000';
+    document.documentElement.style.opacity = '0';
+  </script>
+
+  <!-- everything else comes after -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NY Cricket Live</title>
+  ...
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -402,67 +415,158 @@
     loadChannels();
   </script>
 <script>
-  /* ── Anti-DevTools Protection ── */
+  (function() {
+    'use strict';
 
-  // 1. Block right-click
-  document.addEventListener('contextmenu', e => e.preventDefault());
+    /* ── Hide immediately on any reload ── */
+    document.documentElement.style.visibility = 'hidden';
+    document.documentElement.style.opacity = '0';
+    document.documentElement.style.background = '#000';
 
-  // 2. Block keyboard shortcuts
-  document.addEventListener('keydown', e => {
-    // F12
-    if (e.key === 'F12') { e.preventDefault(); return false; }
-    // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C
-    if (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key)) {
-      e.preventDefault(); return false;
+    function killPage() {
+      try {
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#ff3333;font-family:monospace;font-size:22px;letter-spacing:2px;">⛔ ACCESS DENIED</div>';
+        document.title = '403 Forbidden';
+      } catch(e) {}
+      setTimeout(() => window.location.replace('about:blank'), 1000);
     }
-    // Ctrl+U (view source)
-    if (e.ctrlKey && ['U','u'].includes(e.key)) {
-      e.preventDefault(); return false;
-    }
-    // Ctrl+S (save page)
-    if (e.ctrlKey && ['S','s'].includes(e.key)) {
-      e.preventDefault(); return false;
-    }
-  });
 
-  // 3. Debugger loop — makes the JS debugger unusable
-  (function devtoolsDebuggerLoop() {
-    function loop() {
-      (function() {})['constructor']('debugger')();
+    function revealPage() {
+      document.documentElement.style.visibility = 'visible';
+      document.documentElement.style.opacity = '1';
     }
-    try { loop(); } catch(e) {}
-    requestAnimationFrame(devtoolsDebuggerLoop);
-  })();
 
-  // 4. DevTools size detection — redirect if devtools detected
-  (function detectDevtools() {
-    const threshold = 160;
-    function check() {
-      const widthDiff  = window.outerWidth  - window.innerWidth;
-      const heightDiff = window.outerHeight - window.innerHeight;
-      if (widthDiff > threshold || heightDiff > threshold) {
-        // Devtools likely open — redirect to blank or close
-        document.body.innerHTML = '';
-        document.title = 'Access Denied';
-        window.location.replace('about:blank');
+    /* ── 1. BLOCK RIGHT-CLICK ── */
+    document.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); return false; }, true);
+    document.addEventListener('mousedown',   e => { if (e.button === 2) { e.preventDefault(); return false; } }, true);
+    document.addEventListener('pointerdown', e => { if (e.button === 2) { e.preventDefault(); return false; } }, true);
+
+    /* ── 2. BLOCK KEYBOARD SHORTCUTS ── */
+    const blockedKeys      = new Set(['F12','F5','F7','F8','F9','F10','F11']);
+    const blockedCtrlShift = new Set(['i','I','j','J','c','C','k','K','e','E','m','M','o','O','p','P','q','Q']);
+    const blockedCtrl      = new Set(['u','U','s','S','p','P']);
+
+    document.addEventListener('keydown', e => {
+      if (blockedKeys.has(e.key)) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+      if (e.ctrlKey && e.shiftKey && blockedCtrlShift.has(e.key)) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+      if (e.ctrlKey && !e.shiftKey && !e.altKey && blockedCtrl.has(e.key)) { e.preventDefault(); e.stopImmediatePropagation(); return false; }
+      if (e.metaKey && blockedCtrl.has(e.key)) { e.preventDefault(); return false; }
+    }, true);
+    document.addEventListener('keyup',    e => { if (blockedKeys.has(e.key)) { e.preventDefault(); return false; } }, true);
+    document.addEventListener('keypress', e => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); return false; } }, true);
+
+    /* ── 3. CHECK DEVTOOLS BEFORE REVEALING ── */
+    function sizeCheck() {
+      const wDiff = window.outerWidth  - window.innerWidth;
+      const hDiff = window.outerHeight - window.innerHeight;
+      return wDiff > 100 || hDiff > 100;
+    }
+
+    // Check immediately — if devtools open on reload, never reveal
+    if (sizeCheck()) { killPage(); }
+
+    /* ── 4. CONTINUOUS SIZE GUARD ── */
+    let devtoolsOpen = false;
+    setInterval(function() {
+      if (sizeCheck()) {
+        if (!devtoolsOpen) { devtoolsOpen = true; killPage(); }
+      } else {
+        devtoolsOpen = false;
       }
+    }, 500);
+    window.addEventListener('resize', function() {
+      if (sizeCheck()) killPage();
+    }, true);
+
+    /* ── 5. CONSOLE IMAGE TRAP ── */
+    setTimeout(function() {
+      let element = new Image();
+      Object.defineProperty(element, 'id', {
+        get: function() { killPage(); }
+      });
+      setInterval(function() {
+        try { console.log('%c', element); } catch(e) {}
+      }, 1500);
+    }, 500);
+
+    /* ── 6. DEBUGGER TRAP ── */
+    setTimeout(function() {
+      setInterval(function() {
+        try { (function() {})['constructor']('debugger')(); } catch(e) {}
+      }, 100);
+    }, 2000);
+
+    /* ── 7. NUKE CONSOLE ── */
+    const noop = () => {};
+    ['log','warn','error','info','debug','dir','table','trace',
+     'group','groupEnd','time','timeEnd','assert','clear','count',
+     'dirxml','profile','profileEnd','timeStamp'].forEach(m => {
+      try {
+        Object.defineProperty(console, m, {
+          get: () => noop, set: () => {}, configurable: false
+        });
+      } catch(e) {}
+    });
+    setInterval(() => { try { console.clear(); } catch(e) {} }, 300);
+
+    /* ── 8. DISABLE SELECTION + COPY ── */
+    document.addEventListener('selectstart', e => e.preventDefault(), true);
+    document.addEventListener('dragstart',   e => e.preventDefault(), true);
+    document.addEventListener('copy',        e => e.preventDefault(), true);
+    document.addEventListener('cut',         e => e.preventDefault(), true);
+
+    /* ── 9. IFRAME BUST ── */
+    if (window.top !== window.self) {
+      try { window.top.location = window.self.location; } catch(e) { killPage(); }
     }
-    setInterval(check, 1000);
-    window.addEventListener('resize', check);
-  })();
 
-  // 5. Console warning + periodic clear
-  (function consoleGuard() {
-    const msg = '%c⛔ Unauthorized access is not permitted.';
-    const style = 'color: red; font-size: 18px; font-weight: bold;';
-    setInterval(() => {
-      console.clear();
-      console.log(msg, style);
+    /* ── 10. MUTATION OBSERVER ── */
+    new MutationObserver(mutations => {
+      mutations.forEach(m => {
+        m.addedNodes.forEach(node => {
+          if (node.nodeType === 1) {
+            const tag = (node.tagName || '').toLowerCase();
+            const src = (node.src || node.href || '').toLowerCase();
+            if (tag === 'script' && src &&
+                !src.includes(location.hostname) &&
+                !src.includes('postimg') &&
+                !src.includes('googleapis') &&
+                !src.includes('githubusercontent') &&
+                !src.includes('fonts.g') &&
+                !src.includes('cdnjs')) {
+              node.remove();
+            }
+          }
+        });
+      });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+
+    /* ── 11. FOCUS GUARD ── */
+    let blurTime = 0;
+    window.addEventListener('blur', () => { blurTime = Date.now(); });
+    window.addEventListener('focus', () => {
+      if (blurTime > 0 && (Date.now() - blurTime) < 3000) {
+        if (sizeCheck()) killPage();
+      }
+    });
+
+    /* ── 12. CSS PROTECTION ── */
+    const s = document.createElement('style');
+    s.textContent = `
+      *{-webkit-user-select:none!important;-moz-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}
+      input,textarea,[contenteditable]{-webkit-user-select:text!important;user-select:text!important;}
+      ::selection{background:transparent!important;}
+    `;
+    document.head.appendChild(s);
+
+    /* ── REVEAL — only if devtools not open ── */
+    setTimeout(function() {
+      if (!sizeCheck()) revealPage();
     }, 1500);
-  })();
 
-  // 6. Disable text selection (optional — helps prevent copy-paste of source snippets)
-  document.addEventListener('selectstart', e => e.preventDefault());
-</script>
+  })();
+  </script>
+</body>
+</html>
 </body>
 </html>
