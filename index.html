@@ -416,7 +416,7 @@
   document.documentElement.style.opacity = '0';
   document.documentElement.style.background = '#000';
 
-  /* ── Silent kill — no message, just disappear ── */
+  /* ── Silent kill — close tab, fallback to blank ── */
   function killPage() {
     try {
       document.documentElement.style.visibility = 'hidden';
@@ -424,7 +424,16 @@
       document.body.innerHTML = '';
       document.title = '';
     } catch(e) {}
-    setTimeout(() => window.location.replace('about:blank'), 200);
+    setTimeout(() => {
+      window.close();
+      setTimeout(() => window.location.replace('about:blank'), 300);
+    }, 200);
+  }
+
+  function sizeCheck() {
+    const wDiff = window.outerWidth  - window.innerWidth;
+    const hDiff = window.outerHeight - window.innerHeight;
+    return wDiff > 100 || hDiff > 100;
   }
 
   function revealPage() {
@@ -432,12 +441,6 @@
       document.documentElement.style.visibility = 'visible';
       document.documentElement.style.opacity = '1';
     }
-  }
-
-  function sizeCheck() {
-    const wDiff = window.outerWidth  - window.innerWidth;
-    const hDiff = window.outerHeight - window.innerHeight;
-    return wDiff > 100 || hDiff > 100;
   }
 
   /* ── Check immediately on reload ── */
