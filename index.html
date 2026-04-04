@@ -401,5 +401,68 @@
 
     loadChannels();
   </script>
+  <script>
+  /* ── Anti-DevTools Protection ── */
+
+  // 1. Block right-click
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  // 2. Block keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    // F12
+    if (e.key === 'F12') { e.preventDefault(); return false; }
+    // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C
+    if (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key)) {
+      e.preventDefault(); return false;
+    }
+    // Ctrl+U (view source)
+    if (e.ctrlKey && ['U','u'].includes(e.key)) {
+      e.preventDefault(); return false;
+    }
+    // Ctrl+S (save page)
+    if (e.ctrlKey && ['S','s'].includes(e.key)) {
+      e.preventDefault(); return false;
+    }
+  });
+
+  // 3. Debugger loop — makes the JS debugger unusable
+  (function devtoolsDebuggerLoop() {
+    function loop() {
+      (function() {})['constructor']('debugger')();
+    }
+    try { loop(); } catch(e) {}
+    requestAnimationFrame(devtoolsDebuggerLoop);
+  })();
+
+  // 4. DevTools size detection — redirect if devtools detected
+  (function detectDevtools() {
+    const threshold = 160;
+    function check() {
+      const widthDiff  = window.outerWidth  - window.innerWidth;
+      const heightDiff = window.outerHeight - window.innerHeight;
+      if (widthDiff > threshold || heightDiff > threshold) {
+        // Devtools likely open — redirect to blank or close
+        document.body.innerHTML = '';
+        document.title = 'Access Denied';
+        window.location.replace('about:blank');
+      }
+    }
+    setInterval(check, 1000);
+    window.addEventListener('resize', check);
+  })();
+
+  // 5. Console warning + periodic clear
+  (function consoleGuard() {
+    const msg = '%c⛔ Unauthorized access is not permitted.';
+    const style = 'color: red; font-size: 18px; font-weight: bold;';
+    setInterval(() => {
+      console.clear();
+      console.log(msg, style);
+    }, 1500);
+  })();
+
+  // 6. Disable text selection (optional — helps prevent copy-paste of source snippets)
+  document.addEventListener('selectstart', e => e.preventDefault());
+</script>
 </body>
 </html>
