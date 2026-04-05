@@ -408,26 +408,26 @@
 
     loadChannels();
   </script>
+<head>
 <script>
 (function() {
   'use strict';
 
-  document.documentElement.style.visibility = 'hidden';
-  document.documentElement.style.opacity = '0';
-  document.documentElement.style.background = '#000';
+  /* ── Hide instantly ── */
+  var hide = document.createElement('style');
+  hide.id = '_pageHide';
+  hide.textContent = 'html{display:none!important;}';
+  document.head.appendChild(hide);
 
   /* ── Silent kill — close tab, fallback to blank ── */
   function killPage() {
-    try {
-      document.documentElement.style.visibility = 'hidden';
-      document.documentElement.style.opacity = '0';
-      document.body.innerHTML = '';
-      document.title = '';
-    } catch(e) {}
+    try { document.body.innerHTML = ''; document.title = ''; } catch(e) {}
     setTimeout(() => {
       window.close();
+      try { window.open('','_self',''); window.close(); } catch(e) {}
+      try { self.close(); } catch(e) {}
       setTimeout(() => window.location.replace('about:blank'), 300);
-    }, 200);
+    }, 150);
   }
 
   function sizeCheck() {
@@ -438,8 +438,8 @@
 
   function revealPage() {
     if (!sizeCheck()) {
-      document.documentElement.style.visibility = 'visible';
-      document.documentElement.style.opacity = '1';
+      var el = document.getElementById('_pageHide');
+      if (el) el.remove();
     }
   }
 
@@ -470,26 +470,16 @@
   setInterval(function() {
     if (sizeCheck()) {
       if (!devtoolsOpen) { devtoolsOpen = true; killPage(); }
-    } else {
-      devtoolsOpen = false;
-    }
+    } else { devtoolsOpen = false; }
   }, 500);
-  window.addEventListener('resize', function() {
-    if (sizeCheck()) killPage();
-  }, true);
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && sizeCheck()) killPage();
-  });
+  window.addEventListener('resize', function() { if (sizeCheck()) killPage(); }, true);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && sizeCheck()) killPage(); });
 
   /* ── 4. CONSOLE IMAGE TRAP ── */
   setTimeout(function() {
     let element = new Image();
-    Object.defineProperty(element, 'id', {
-      get: function() { killPage(); }
-    });
-    setInterval(function() {
-      try { console.log('%c', element); } catch(e) {}
-    }, 1500);
+    Object.defineProperty(element, 'id', { get: function() { killPage(); } });
+    setInterval(function() { try { console.log('%c', element); } catch(e) {} }, 1500);
   }, 500);
 
   /* ── 5. DEBUGGER TRAP ── */
@@ -504,11 +494,7 @@
   ['log','warn','error','info','debug','dir','table','trace',
    'group','groupEnd','time','timeEnd','assert','clear','count',
    'dirxml','profile','profileEnd','timeStamp'].forEach(m => {
-    try {
-      Object.defineProperty(console, m, {
-        get: () => noop, set: () => {}, configurable: false
-      });
-    } catch(e) {}
+    try { Object.defineProperty(console, m, { get: () => noop, set: () => {}, configurable: false }); } catch(e) {}
   });
   setInterval(() => { try { console.clear(); } catch(e) {} }, 300);
 
@@ -536,7 +522,11 @@
               !src.includes('googleapis') &&
               !src.includes('githubusercontent') &&
               !src.includes('fonts.g') &&
-              !src.includes('cdnjs')) {
+              !src.includes('cdnjs') &&
+              !src.includes('jsdelivr') &&
+              !src.includes('pinimg') &&
+              !src.includes('matcheslinkz') &&
+              !src.includes('my-api')) {
             node.remove();
           }
         }
@@ -567,6 +557,18 @@
 
 })();
 </script>
+
+<!-- disable-devtool npm package as extra layer -->
+<script disable-devtool-auto src='https://cdn.jsdelivr.net/npm/disable-devtool'></script>
+
+<!-- your existing scripts -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="referrer" content="no-referrer">
+<title>JioTV</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css">
+<script src="https://matcheslinkz.pages.dev/ad-controller.js"></script>
 </body>
 </html>
 </body>
